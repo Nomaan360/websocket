@@ -4,15 +4,22 @@ const md5 = require('md5');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const Merchant = require('../models/Merchant');
+const { Op } = require('sequelize');
+
 // const {strictcheckauth}=require('../middleware/usermiddleware')
 // const {validateTokenForUser} =require('../services/userauth')
 
 router.get('/',async(req,res)=>{
     // let categoris=await Categories.find({})
     // console.log('rewrrte',categoris);
+    let merchantid= req.session.merchantid
+    let merchant
+    if(merchantid){
+        merchant = await Merchant.findOne({ where: { id: merchantid } }); // Correct query
+    }
     console.log('req.uses',req.users);
     res.render('home',{
-        user:req.users,
+        user:merchant,
         // categories:categoris
     })
 })
@@ -74,8 +81,8 @@ router.post('/login',async(req,res)=>{
             // Set session variables
             req.session.merchantid = merchant.id; // Ensure you use the correct field for ID
             req.session.merchantname = merchant.merchant_name;
-          
-            return res.status(200).json({ message: 'Login successful' });
+            res.redirect('/')
+            // return res.status(200).json({ message: 'Login successful' });
         } else {
             return res.status(401).json({ message: 'Invalid credentials' }); // Password mismatch
         }
@@ -106,28 +113,53 @@ router.get('/logout',async(req,res)=>{
     res.redirect('/')
 })
 
-// router.get('/chats',strictcheckauth,async(req,res)=>{
+router.get('/chats',async(req,res)=>{
+    let merchantid= req.session.merchantid
+    console.log(merchantid);
     
-//     let users=await Users.find({_id: { $ne: req.users._id }});
-//     res.render('./users/userchat',{
-//         users:users,
-//         user:req.users,
-//     });
-// })
+    if(merchantid){
 
-// router.get('/api/user/:id',strictcheckauth,async(req,res)=>{
-//     try {
-//         const user = await Users.find({_id:req.params.id}).exec();
-//         if (!user) {
-//             return res.status(404).json({ error: 'User not found' });
-//         }
-//         console.log('user',user);
-        
-//         res.json(user);
-//     } catch (error) {
-//         res.status(500).json({ error: 'Server error' });
-//     }
-// })
+        let merchant = await Merchant.findOne({ where: { id: merchantid } });
+
+        // Fetch all merchants except the current one
+        let users = await Merchant.findAll({
+            where: {
+                id: {
+                    [Op.ne]: merchantid // This is the correct syntax for "not equal to"
+                }
+            }
+        });
+        res.render('./users/userchat',{
+            users:users,
+            user:merchant,
+        });
+    }
+    else{
+        res.redirect('/')
+
+    }
+})
+
+router.get('/api/user/:id',async(req,res)=>{
+    console.log('asd',req.params.id);
+    let merchantid= req.session.merchantid
+    console.log('merchantid',merchantid);
+    
+    if(merchantid){
+        try {
+            let user = await Merchant.findOne({ where: { id: req.params.id } });
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            console.log('user',user);
+            
+            res.json(user);
+        } catch (error) {
+            res.status(500).json({ error: 'Server error' });
+        }
+    }
+})
 
 
 module.exports=router

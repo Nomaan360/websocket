@@ -74,7 +74,7 @@ async function chatwith(to,from){
     let roomid = `${from}_${to}`
     let roomidAsc = sortStringAscending(roomid);
     console.log('user',user);
-    chatperson.innerText=`CHAT With ${user[0].firstname}`
+    chatperson.innerText=`CHAT With ${user.merchant_name}`
 
     sendChats.setAttribute('onclick',`sendChat('${roomidAsc}','${from}')`)
     socket.emit("chatto", roomidAsc);

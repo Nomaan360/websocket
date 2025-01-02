@@ -6,9 +6,7 @@ const Port=9000
 const userrouter=require('./router/users')
 const sequelize = require('./db');
 // const adminrouter=require('./router/admins')
-const mongoose =require('mongoose')
-// const Categories=require('./models/categories')
-const fs = require('fs');
+const Merchant = require('./models/Merchant');
 const session = require('express-session');
 const passport = require('passport');
 const { Server } = require("socket.io");
@@ -86,9 +84,14 @@ io.on('connection',async(socket)=>{
 app.get('/',async(req,res)=>{
     // let categoris=await Categories.find({})
     // console.log('rewrrte',categoris);
+    let merchantid= req.session.merchantid
+    let merchant
+    if(merchantid){
+        merchant = await Merchant.findOne({ where: { id: merchantid } }); // Correct query
+    }
 
     res.render('home',{
-        user:req.users,
+        user:merchant,
         // categories:categoris
     })
 })
