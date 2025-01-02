@@ -7,18 +7,26 @@ const Merchant = sequelize.define('Merchant', {
         autoIncrement: true,
         primaryKey: true,
     },
-    mobile_number: {
+    merchant_name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+    },
+    business_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    merchant_email: {
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     password: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    merchant_name: {
+    mobile_number: {
         type: DataTypes.STRING,
         allowNull: false,
+        unique: true,
     },
 }, {
     tableName: 'merchants', // Your MySQL table name

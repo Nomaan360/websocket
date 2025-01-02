@@ -2,7 +2,8 @@ const {Router}=require('express')
 const router=Router()
 const md5 = require('md5');
 const crypto = require('crypto');
-const Merchant = require('./models/Merchant');
+const bcrypt = require('bcrypt');
+const Merchant = require('../models/Merchant');
 // const {strictcheckauth}=require('../middleware/usermiddleware')
 // const {validateTokenForUser} =require('../services/userauth')
 
@@ -30,11 +31,11 @@ router.post('/register',async(req,res)=>{
             const hashedPassword = crypto.createHash('md5').update(upassword).digest('hex');
 
             // Insert the merchant into the database
-            const newMerchant = await Merchant.create({
-                unumber,
+            await Merchant.create({
+                merchant_name: uname,
+                merchant_email: uemail,
+                mobile_number: unumber,
                 password: hashedPassword,
-                uname,
-                uemail
             });
             res.redirect('/user/signin')
             // return res.status(201).json({ message: 'Merchant created successfully', merchant: newMerchant });
@@ -48,45 +49,41 @@ router.post('/register',async(req,res)=>{
         console.error(error);
         return res.status(500).json({ error: 'An error occurred while inserting the merchant' });
     }
-    // try
-    // {
-    //     if(upassword==cpassword){
-    //         await Users.create({
-    //             firstname:uname,
-    //             emaild:uemail,
-    //             number:unumber,
-    //             password: upassword,
-    //         })
-    //         res.redirect('/user/signin')
-    //     }
-    //     else{
-    //         res.render('./users/signup',{
-    //             err:'Password not matched'
-    //         }) 
-    //     }
-    // }catch(error){
-    //     if (error.code === 11000 && error.keyPattern.emaild) {
-    //         res.render('./users/signup',{
-    //             err:'Already registered with Email Id!'
-    //         }) 
-    //     }
-    //      else if(error.code === 11000 && error.keyPattern.number) {
-    //         res.render('./users/signup',{
-    //             err:'Already registered with Number!'
-    //         }) 
-    //     }
-    //     else{
-    //         throw err
-    //     }
-    // }
 })
 
 router.post('/login',async(req,res)=>{
     const {unumber,upassword}=req.body
-
-    const hashedPassword = md5(upassword);
-
-    console.log(hashedPassword);
+    try {
+        // Validate input
+        if (!unumber || !upassword) {
+            return res.status(400).json({ message: 'Mobile number and password are required' });
+        }
+    
+        // Find merchant by mobile number
+        const merchant = await Merchant.findOne({ where: { mobile_number: unumber } }); // Correct query
+    
+        if (!merchant) {
+            return res.status(401).json({ message: 'Invalid credentials' }); // If no merchant found
+        }
+    
+        // Hash the entered password with MD5
+        const hashedPassword = crypto.createHash('md5').update(upassword).digest('hex');
+    
+        // Compare the hashed password with the stored password
+        if (hashedPassword === merchant.password) {
+            // Set session variables
+            req.session.merchantid = merchant.id; // Ensure you use the correct field for ID
+            req.session.merchantname = merchant.merchant_name;
+          
+            return res.status(200).json({ message: 'Login successful' });
+        } else {
+            return res.status(401).json({ message: 'Invalid credentials' }); // Password mismatch
+        }
+    
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
     
 })
 
